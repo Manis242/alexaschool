@@ -1,0 +1,503 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accueil - ALEXA-SCHOOL | Gestion Scolaire</title>
+    <link rel="icon" href="{% static 'core/images/logo.png' %}">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+         body {
+            font-family: 'Inter', sans-serif;
+            color: #333;
+            background-image: url('{% static "core/images/al.png" %}');
+        }
+
+        .carousel-container {
+            position: relative;
+            width: 100%;
+            overflow: hidden;
+            border-radius: 0.75rem; /* rounded-xl */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); /* shadow-xl */
+        }
+        .carousel-slide {
+            display: none; /* Hidden by default */
+            width: 100%;
+            height: auto; /* Ensure aspect ratio is maintained */
+        }
+        .carousel-slide.active {
+            display: block; /* Show active slide */
+        }
+        .carousel-slide img {
+            width: 100%;
+            height: auto;
+            object-fit: cover; /* Cover the area, crop if necessary */
+        }
+        .carousel-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: white;
+            padding: 1.5rem;
+            background: rgba(0, 0, 0, 0.5); /* Semi-transparent background for text */
+            border-radius: 0.5rem;
+            max-width: 90%; /* Max width for text on slides */
+        }
+        .carousel-nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: rgba(0, 0, 0, 0.6);
+            color: white;
+            padding: 0.75rem 0.5rem;
+            border-radius: 0.375rem;
+            font-size: 1.5rem;
+            line-height: 1;
+            cursor: pointer;
+            z-index: 10;
+            transition: background-color 0.3s ease;
+        }
+        .carousel-nav-btn:hover {
+            background-color: rgba(0, 0, 0, 0.8);
+        }
+        .carousel-nav-btn.prev {
+            left: 1rem;
+        }
+        .carousel-nav-btn.next {
+            right: 1rem;
+        }
+        .carousel-dots {
+            position: absolute;
+            bottom: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 0.5rem;
+            z-index: 10;
+        }
+        .dot {
+            width: 0.75rem;
+            height: 0.75rem;
+            background-color: rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .dot.active {
+            background-color: white;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex flex-col min-h-screen">
+
+    <!-- Barre de navigation -->
+    <nav class="bg-white p-4 shadow-md sticky top-0 z-50">
+        <div class="container mx-auto flex flex-wrap justify-between items-center">
+            <a href="{% url 'home' %}" class="text-3xl font-extrabold text-blue-800 hover:text-blue-600 transition-colors duration-300 flex items-center">
+                <img src="{% static 'core/images/logo.png' %}" alt="Logo AlexaSchool" class="h-10 w-auto mr-3">
+                ALEXA-SCHOOL
+            </a>
+            <div class="block lg:hidden">
+                <button id="nav-toggle" class="flex items-center px-3 py-2 border rounded text-blue-700 border-blue-700 hover:text-blue-900 hover:border-blue-900">
+                    <svg class="fill-current h-3 w-3" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><title>Menu</title><path d="M0 3h20v2H0V3zm0 6h20v2H0V9zm0 6h20v2H0v-2z"/></svg>
+                </button>
+            </div>
+            <div class="w-full flex-grow lg:flex lg:items-center lg:w-auto hidden lg:block pt-6 lg:pt-0" id="nav-content">
+                <ul class="lg:flex justify-end flex-1 items-center">
+                    <li class="mr-3 mt-2 lg:mt-0">
+                        <a href="{% url 'article_list' %}" class="inline-block py-2 px-4 text-gray-700 font-semibold hover:text-blue-700 hover:bg-gray-100 rounded-md transition duration-300">Articles</a>
+                    </li>
+                    {# NOUVEAU: Le bouton Pré-inscription disparaît si l'utilisateur est connecté #}
+                    {% if not user.is_authenticated %}
+                    <li class="mr-3 mt-2 lg:mt-0">
+                        <a href="{% url 'pre_inscription' %}" class="inline-block py-2 px-4 text-gray-700 font-semibold hover:text-blue-700 hover:bg-gray-100 rounded-md transition duration-300">Pré-inscription</a>
+                    </li>
+                    {% endif %}
+
+                    {% if user.is_authenticated %}
+                        {% if user.etudiant %}
+                            <li class="mr-3 mt-2 lg:mt-0">
+                                <a href="{% url 'consultation_notes' %}" class="inline-block py-2 px-4 text-gray-700 font-semibold hover:text-blue-700 hover:bg-gray-100 rounded-md transition duration-300">Mes Notes</a>
+                            </li>
+                        {% endif %}
+                        {% if user.formateur %}
+                            <li class="mr-3 mt-2 lg:mt-0">
+                                <a href="{% url 'formateur_tableau_de_bord' %}" class="inline-block py-2 px-4 text-gray-700 font-semibold hover:text-blue-700 hover:bg-gray-100 rounded-md transition duration-300">Mon Tableau de Bord</a>
+                            </li>
+                        {% endif %}
+                        {% if user.is_staff %}
+                            <li class="mr-3 mt-2 lg:mt-0">
+                                <a href="{% url 'admin:index' %}" class="inline-block py-2 px-4 text-gray-700 font-semibold hover:text-blue-700 hover:bg-gray-100 rounded-md transition duration-300">Administration</a>
+                            </li>
+                            <li class="mr-3 mt-2 lg:mt-0">
+                                <a href="{% url 'rapport_heures_formateurs' %}" class="inline-block py-2 px-4 text-gray-700 font-semibold hover:text-blue-700 hover:bg-gray-100 rounded-md transition duration-300">Rapport Heures</a>
+                            </li>
+                            <li class="mr-3 mt-2 lg:mt-0">
+                                <a href="{% url 'emargement_validation' %}" class="inline-block py-2 px-4 text-gray-700 font-semibold hover:text-blue-700 hover:bg-gray-100 rounded-md transition duration-300">Valider Émargements</a>
+                            </li>
+                        {% endif %}
+                        <li class="mt-2 lg:mt-0">
+                            <form action="{% url 'logout' %}" method="post" class="inline">
+                                {% csrf_token %}
+                                <button type="submit" class="bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600 transition duration-300">Déconnexion</button>
+                            </form>
+                        </li>
+                    {% else %}
+                        <li class="mt-2 lg:mt-0">
+                            <a href="{% url 'login' %}" class="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition duration-300">Se connecter</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+
+  <!-- Section Carrousel (remplace la section Hero) -->
+    <section class="w-full flex justify-center py-8">
+        <div class="carousel-container w-full max-w-6xl">
+            <!-- Slides -->
+            <div class="carousel-slide active">
+                <img src="{% static '/core/images/al.png' %}" alt="Image de futur etudiants de mon ecole">
+                <div class="carousel-text">
+                    <h2 class="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-4 leading-tight">
+                        Apprentissage Innovant
+                    </h2>
+                    <p class="text-lg md:text-xl lg:text-2xl opacity-90">
+                        Découvrez nos méthodes pédagogiques à la pointe de la technologie.
+                    </p>
+                    {% if not user.is_authenticated %}
+                    <a href="{% url 'pre_inscription' %}" class="inline-block bg-white text-blue-700 font-bold py-3 px-8 rounded-full shadow-lg hover:bg-gray-100 hover:scale-105 transition-all duration-300 text-lg mt-8">
+                        Commencer ma pré-inscription
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="carousel-slide">
+                <img src="{% static '/core/images/slide1.jpg' %}" alt="Image de futur etudiants de mon ecole">
+                <div class="carousel-text">
+                    <h2 class="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-4 leading-tight">
+                        Un Campus Moderne
+                    </h2>
+                    <p class="text-lg md:text-xl lg:text-2xl opacity-90">
+                        Des infrastructures de pointe pour un environnement d'étude optimal.
+                    </p>
+                     {% if not user.is_authenticated %}
+                    <a href="{% url 'pre_inscription' %}" class="inline-block bg-white text-blue-700 font-bold py-3 px-8 rounded-full shadow-lg hover:bg-gray-100 hover:scale-105 transition-all duration-300 text-lg mt-8">
+                        Commencer ma pré-inscription
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="carousel-slide">
+                <img src="{% static '/core/images/slide3.jpg' %}" alt="Image de futur etudiants de mon ecole">
+                <div class="carousel-text">
+                    <h2 class="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-4 leading-tight">
+                        Projets Collaboratifs
+                    </h2>
+                    <p class="text-lg md:text-xl lg:text-2xl opacity-90">
+                        Développez vos compétences en équipe avec des projets concrets.
+                    </p>
+                     {% if not user.is_authenticated %}
+                    <a href="{% url 'pre_inscription' %}" class="inline-block bg-white text-blue-700 font-bold py-3 px-8 rounded-full shadow-lg hover:bg-gray-100 hover:scale-105 transition-all duration-300 text-lg mt-8">
+                        Commencer ma pré-inscription
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="carousel-slide">
+                <img src="{% static '/core/images/slide5.jpg' %}" alt="Image de futur etudiants de mon ecole">
+                <div class="carousel-text">
+                    <h2 class="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-4 leading-tight">
+                        Projets Collaboratifs
+                    </h2>
+                    <p class="text-lg md:text-xl lg:text-2xl opacity-90">
+                        Développez vos compétences en équipe avec des projets concrets.
+                    </p>
+                     {% if not user.is_authenticated %}
+                    <a href="{% url 'pre_inscription' %}" class="inline-block bg-white text-blue-700 font-bold py-3 px-8 rounded-full shadow-lg hover:bg-gray-100 hover:scale-105 transition-all duration-300 text-lg mt-8">
+                        Commencer ma pré-inscription
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="carousel-slide">
+                <img src="{% static '/core/images/slide7.jpg' %}" alt="Image de futur etudiants de mon ecole">
+                <div class="carousel-text">
+                    <h2 class="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-4 leading-tight">
+                        Projets Collaboratifs
+                    </h2>
+                    <p class="text-lg md:text-xl lg:text-2xl opacity-90">
+                        Développez vos compétences en équipe avec des projets concrets.
+                    </p>
+                     {% if not user.is_authenticated %}
+                    <a href="{% url 'pre_inscription' %}" class="inline-block bg-white text-blue-700 font-bold py-3 px-8 rounded-full shadow-lg hover:bg-gray-100 hover:scale-105 transition-all duration-300 text-lg mt-8">
+                        Commencer ma pré-inscription
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="carousel-slide">
+                <img src="{% static '/core/images/slide12.jpg' %}" alt="Image de futur etudiants de mon ecole">
+                <div class="carousel-text">
+                    <h2 class="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-4 leading-tight">
+                        Projets Collaboratifs
+                    </h2>
+                    <p class="text-lg md:text-xl lg:text-2xl opacity-90">
+                        Développez vos compétences en équipe avec des projets concrets.
+                    </p>
+                     {% if not user.is_authenticated %}
+                    <a href="{% url 'pre_inscription' %}" class="inline-block bg-white text-blue-700 font-bold py-3 px-8 rounded-full shadow-lg hover:bg-gray-100 hover:scale-105 transition-all duration-300 text-lg mt-8">
+                        Commencer ma pré-inscription
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            <!-- Navigation Buttons -->
+            <button class="carousel-nav-btn prev" onclick="changeSlide(-1)">&#10094;</button>
+            <button class="carousel-nav-btn next" onclick="changeSlide(1)">&#10095;</button>
+
+            <!-- Dots -->
+            <div class="carousel-dots">
+                <span class="dot active" onclick="currentSlide(1)"></span>
+                <span class="dot" onclick="currentSlide(2)"></span>
+                <span class="dot" onclick="currentSlide(3)"></span>
+                <span class="dot" onclick="currentSlide(4)"></span>
+                <span class="dot" onclick="currentSlide(5)"></span>
+                <span class="dot" onclick="currentSlide(6)"></span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Section des Fonctionnalités -->
+    <section class="py-16 bg-white px-4">
+        <div class="container mx-auto text-center">
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-12">Nos Fonctionnalités Clés</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="bg-blue-50 p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300">
+                    <div class="text-blue-600 text-5xl mb-4">📚</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">Suivi Académique Personnalisé</h3>
+                    <p class="text-gray-600">Consultez vos notes et moyennes par matière et par semestre en temps réel. Soyez toujours informé de votre progression.</p>
+                </div>
+                <div class="bg-green-50 p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300">
+                    <div class="text-green-600 text-5xl mb-4">✍️</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">Publication d'Articles & Actualités</h3>
+                    <p class="text-gray-600">Restez connecté avec les dernières nouvelles, événements et articles publiés par l'administration et vos pairs.</p>
+                </div>
+                <div class="bg-purple-50 p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300">
+                    <div class="text-purple-600 text-5xl mb-4">⏱️</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">Gestion Simplifiée des Émargements</h3>
+                    <p class="text-gray-600">Pour les formateurs : soumettez vos heures de cours facilement. Pour l'administration : validez et suivez avec précision.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    ---
+
+    <!-- NOUVEAU: Section Nos Filières ou Options -->
+    <section class="py-16 bg-gray-100 px-4">
+        <div class="container mx-auto text-center">
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-12">Nos Filières et Options</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300">
+                    <div class="text-blue-700 text-5xl mb-4">💻</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">Informatique</h3>
+                    <p class="text-gray-600">Développez des compétences en programmation, réseaux, cybersécurité et intelligence artificielle.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300">
+                    <div class="text-green-700 text-5xl mb-4">📈</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">Gestion & Administration</h3>
+                    <p class="text-gray-600">Maîtrisez les fondamentaux de la gestion d'entreprise, du marketing et de la finance.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300">
+                    <div class="text-purple-700 text-5xl mb-4">🎨</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">Design & Communication</h3>
+                    <p class="text-gray-600">Créez des visuels impactants et devenez expert en stratégies de communication digitale.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300">
+                    <div class="text-red-700 text-5xl mb-4">💡</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">Ingénierie & Innovation</h3>
+                    <p class="text-gray-600">Concevez les technologies de demain et participez à la transformation numérique.</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300">
+                    <div class="text-orange-700 text-5xl mb-4">🌍</div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">Sciences Sociales</h3>
+                    <p class="text-gray-600">Analysez les sociétés, les cultures et les enjeux contemporains avec une approche critique.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    ---
+
+    <!-- NOUVEAU: Section À Propos de Nous -->
+    <section class="py-16 bg-white px-4">
+        <div class="container mx-auto text-center max-w-4xl">
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-12">À Propos de ALEXA-SCHOOL</h2>
+            <p class="text-lg text-gray-700 mb-6">
+                Alexa-School est une institution éducative pionnière dédiée à l'excellence académique et à l'innovation.
+                Depuis notre fondation en 2020, nous nous engageons à former les leaders et les professionnels de demain.
+            </p>
+            <p class="text-lg text-gray-700 mb-6">
+                Notre approche pédagogique est centrée sur l'étudiant, combinant théorie solide et expérience pratique.
+                Nous offrons un environnement stimulant, des infrastructures modernes et un corps professoral hautement qualifié
+                pour garantir le succès de nos diplômés sur le marché du travail mondial.
+            </p>
+            <p class="text-lg text-gray-700">
+                Notre mission est d'inspirer, d'éduquer et d'équiper nos étudiants avec les compétences nécessaires pour relever les défis du 21e siècle.
+            </p>
+        </div>
+    </section>
+
+    ---
+
+    <!-- NOUVEAU: Section Témoignages -->
+    <section class="py-16 bg-gray-100 px-4">
+        <div class="container mx-auto text-center">
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-12">Ce que disent nos Étudiants</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-white p-6 rounded-lg shadow-md border-t-4 border-blue-500">
+                    <p class="text-gray-700 italic mb-4">
+                        "Alexa-School a transformé mon parcours éducatif. Les cours sont pertinents, les professeurs dévoués,
+                        et l'ambiance d'apprentissage est incroyable. J'ai trouvé ma voie ici !"
+                    </p>
+                    <p class="font-semibold text-gray-800">- Marie TCHIKAYA, Étudiante en Informatique</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md border-t-4 border-green-500">
+                    <p class="text-gray-700 italic mb-4">
+                        "Grâce aux compétences acquises à Alexa-School, j'ai décroché le poste de mes rêves avant même
+                        d'obtenir mon diplôme. Le suivi personnalisé fait toute la différence."
+                    </p>
+                    <p class="font-semibold text-gray-800">- Melone OUNANDEY, Diplômé en Gestion</p>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-md border-t-4 border-purple-500">
+                    <p class="text-gray-700 italic mb-4">
+                        "La plateforme Alexa-School est un outil génial pour suivre mes notes et communiquer avec mes professeurs.
+                        C'est super intuitif et ça me permet de rester organisé."
+                    </p>
+                    <p class="font-semibold text-gray-800">- Batia MOUSSOKI, Étudiante en Design</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    ---
+
+    <!-- NOUVEAU: Section Contactez-nous -->
+    <section class="py-16 bg-white px-4">
+        <div class="container mx-auto text-center max-w-xl">
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-12">Contactez-nous</h2>
+            <p class="text-lg text-gray-700 mb-4">
+                Vous avez des questions ? N'hésitez pas à nous contacter !
+            </p>
+            <div class="space-y-4 text-left inline-block">
+                <p class="text-gray-800 text-lg font-semibold flex items-center">
+                    <span class="mr-3 text-blue-600 text-xl">📧</span> Email: contact@alexa-school.com
+                </p>
+                <p class="text-gray-800 text-lg font-semibold flex items-center">
+                    <span class="mr-3 text-green-600 text-xl">📞</span> Téléphone: +242 06 892 60 04
+                </p>
+                <p class="text-gray-800 text-lg font-semibold flex items-center">
+                    <span class="mr-3 text-purple-600 text-xl">📍</span> Adresse: Siafoumou, Rue Beto Na Beto, Pointe - Noire
+                </p>
+            </div>
+            <p class="text-md text-gray-600 mt-8">
+                Nos bureaux sont ouverts du lundi au vendredi, de 8h00 à 17h00.
+            </p>
+        </div>
+    </section>
+
+    <!-- Section Témoignages ou Appel à l'action secondaire -->
+    <section class="py-16 bg-gray-50 px-4">
+        <div class="container mx-auto text-center">
+            <h2 class="text-3xl md:text-4xl font-bold text-gray-800 mb-8">Prêt à rejoindre l'aventure ?</h2>
+            <p class="text-lg text-gray-700 mb-8 max-w-2xl mx-auto">
+                Que vous soyez un futur étudiant, un formateur passionné ou un membre de l'administration,
+                ALEXA-SCHOOL est conçu pour optimiser votre expérience et faciliter votre quotidien.
+            </p>
+            <a href="{% url 'login' %}" class="inline-block bg-purple-600 text-white font-bold py-3 px-8 rounded-full shadow-lg hover:bg-purple-700 hover:scale-105 transition-all duration-300 text-lg">
+                Accéder à votre espace
+            </a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8 mt-auto px-4">
+        <div class="container mx-auto text-center text-gray-400">
+            <p>&copy; 2025 Alexa-School. Tous droits réservés.</p>
+            <p class="text-sm mt-2">
+                <a href="#" class="hover:underline">Politique de confidentialité</a> |
+                <a href="#" class="hover:underline">Conditions d'utilisation</a>
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // JavaScript pour le menu mobile (hamburger icon)
+        document.getElementById('nav-toggle').onclick = function() {
+            document.getElementById('nav-content').classList.toggle('hidden');
+        }
+
+         // --- JavaScript pour le Carrousel ---
+        let slideIndex = 0;
+        let slides = document.getElementsByClassName("carousel-slide");
+        let dots = document.getElementsByClassName("dot");
+        let slideInterval;
+
+        function showSlides() {
+            for (let i = 0; i < slides.length; i++) {
+                slides[i].classList.remove('active');
+            }
+            for (let i = 0; i < dots.length; i++) {
+                dots[i].classList.remove('active');
+            }
+
+            slides[slideIndex].classList.add('active');
+            dots[slideIndex].classList.add('active');
+        }
+
+        function changeSlide(n) {
+            clearInterval(slideInterval); // Stop auto-play on manual change
+            slideIndex += n;
+            if (slideIndex >= slides.length) { slideIndex = 0; }
+            if (slideIndex < 0) { slideIndex = slides.length - 1; }
+            showSlides();
+            startAutoPlay(); // Restart auto-play
+        }
+
+        function currentSlide(n) {
+            clearInterval(slideInterval); // Stop auto-play on manual change
+            slideIndex = n - 1; // Adjust for 0-based index
+            showSlides();
+            startAutoPlay(); // Restart auto-play
+        }
+
+        function startAutoPlay() {
+            slideInterval = setInterval(() => {
+                changeSlide(1);
+            }, 5000); // Change slide every 5 seconds
+        }
+
+        // Initialisation du carrousel au chargement de la page
+        document.addEventListener('DOMContentLoaded', () => {
+            if (slides.length > 0) {
+                showSlides();
+                startAutoPlay();
+
+                // Pause auto-play on hover, resume on mouseout
+                const carouselContainer = document.querySelector('.carousel-container');
+                carouselContainer.addEventListener('mouseenter', () => clearInterval(slideInterval));
+                carouselContainer.addEventListener('mouseleave', startAutoPlay);
+            }
+        });
+    </script>
+</body>
+</html>

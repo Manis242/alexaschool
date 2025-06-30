@@ -1,0 +1,146 @@
+<!-- core/templates/core/formateur_tableau_de_bord.html -->
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tableau de Bord Formateur</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .table-auto {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .table-auto th, .table-auto td {
+            border: 1px solid #e2e8f0;
+            padding: 0.75rem;
+            text-align: left;
+        }
+        .table-auto th {
+            background-color: #f8fafc;
+            font-weight: 600;
+            color: #4a5568;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex flex-col items-center min-h-screen p-4">
+    <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-4xl mt-8 mb-8">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-bold text-gray-800">Tableau de Bord de Mr: {{ formateur.prenom }} {{ formateur.nom }}</h1>
+            <form action="{% url 'logout' %}" method="post" class="inline">
+                {% csrf_token %}
+                <button type="submit" class="bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600 transition duration-300 cursor-pointer">Déconnexion</button>
+            </form>
+        </div>
+
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">Récapitulatif des Heures par Mois (Validées)</h2>
+        {% if heures_par_mois %}
+            <div class="overflow-x-auto mb-8">
+                <table class="table-auto min-w-full">
+                    <thead>
+                        <tr>
+                            <th class="px-4 py-2">Mois</th>
+                            <th class="px-4 py-2">Heures Totales</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for mois, heures in heures_par_mois.items %}
+                            <tr>
+                                <td class="px-4 py-2">{{ mois }}</td>
+                                <td class="px-4 py-2">{{ heures|floatformat:2 }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-gray-700 mb-8">Aucun émargement validé enregistré pour le moment.</p>
+        {% endif %}
+
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">Mes Émargements soumis</h2>
+        <p class="mb-4"><a href="{% url 'emargement_form' %}" class="text-blue-600 hover:underline">Enregistrer un nouvel émargement</a></p>
+
+        {% if emargements_temporaires %}
+            <div class="overflow-x-auto mb-8">
+                <table class="table-auto min-w-full">
+                    <thead>
+                        <tr>
+                            <th class="px-4 py-2">Matière</th>
+                            <th class="px-4 py-2">Début</th>
+                            <th class="px-4 py-2">Fin</th>
+                            <th class="px-4 py-2">Durée (h)</th>
+                            <th class="px-4 py-2">Statut</th>
+                            <th class="px-4 py-2">Notes Formateur</th>
+                            <th class="px-4 py-2">Motif Rejet</th>
+                            <th class="px-4 py-2">Date Soumission</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in emargements_temporaires %}
+                            <tr>
+                                <td class="px-4 py-2">{% if entry.matiere %}
+                                                          {{ entry.matiere.nom }}
+                                                       {% else %}
+                                                                N/A
+                                                        {% endif %}</td>
+                                <td class="px-4 py-2">{{ entry.date_heure_debut|date:"d M Y H:i" }}</td>
+                                <td class="px-4 py-2">{{ entry.date_heure_fin|date:"d M Y H:i" }}</td>
+                                <td class="px-4 py-2">{{ entry.duree_heures|floatformat:2 }}</td>
+                                <td class="px-4 py-2">
+                                    <span class="font-semibold {% if entry.statut == 'EN_ATTENTE' %}text-yellow-600{% elif entry.statut == 'VALIDE' %}text-green-600{% elif entry.statut == 'REJETE' %}text-red-600{% endif %}">
+                                        {{ entry.get_statut_display }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-2">{{ entry.notes|default:"N/A" }}</td>
+                                <td class="px-4 py-2">{{ entry.motif_rejet|default:"N/A" }}</td>
+                                <td class="px-4 py-2">{{ entry.date_soumission|date:"d M Y H:i" }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-gray-700 mb-8">Aucun émargement soumis pour validation.</p>
+        {% endif %}
+
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">Mes Émargements Validés</h2>
+        {% if emargements_valides %}
+            <div class="overflow-x-auto">
+                <table class="table-auto min-w-full">
+                    <thead>
+                        <tr>
+                            <th class="px-4 py-2">Matière</th>
+                            <th class="px-4 py-2">Début</th>
+                            <th class="px-4 py-2">Fin</th>
+                            <th class="px-4 py-2">Durée (h)</th>
+                            <th class="px-4 py-2">Salle</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for emargement in emargements_valides %}
+                            <tr>
+                                <td class="px-4 py-2">{% if emargement.matiere %}
+                                                          {{ emargement.matiere.nom }}
+                                                       {% else %}
+                                                                N/A
+                                                        {% endif %}</td>
+                                <td class="px-4 py-2">{{ emargement.date_heure_debut|date:"d M Y H:i" }}</td>
+                                <td class="px-4 py-2">{{ emargement.date_heure_fin|date:"d M Y H:i" }}</td>
+                                <td class="px-4 py-2">{{ emargement.duree_heures|floatformat:2 }}</td>
+                                <td class="px-4 py-2">{{ emargement.salle|default:"N/A" }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-gray-700">Aucun émargement validé enregistré.</p>
+        {% endif %}
+    </div>
+</body>
+</html>

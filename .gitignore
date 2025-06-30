@@ -1,0 +1,34 @@
+# Ignorer les fichiers de cache Python
+__pycache__/
+*.pyc
+*.pyd
+*.pyo
+venv/  # Si vous utilisez un environnement virtuel nommé 'venv'
+
+# Fichiers de base de données SQLite (si vous l'utilisez en dev)
+db.sqlite3
+
+# Paramètres de Django sensibles (ne jamais commettre !)
+*.env
+.env
+.flaskenv
+.venv
+
+# Fichiers médias et statiques générés (si gérés par le serveur web)
+/media/
+/static_root/ # Le dossier où collectstatic place les fichiers
+
+# Fichiers de logs
+*.log
+log/
+
+# Fichiers d'IDE (comme PyCharm, VS Code)
+.idea/
+.vscode/
+
+# macOS specific files
+.DS_Store
+
+# Fichiers de configuration Gunicorn/uWSGI (si sensibles)
+gunicorn.py
+uwsgi.ini

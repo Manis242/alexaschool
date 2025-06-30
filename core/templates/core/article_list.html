@@ -1,0 +1,310 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Actualités et Articles - SchoolNet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            color: #333;
+        }
+        .article-card {
+            background-color: white;
+            border-radius: 0.75rem; /* rounded-xl */
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); /* shadow-md */
+            margin-bottom: 2rem;
+            overflow: hidden; /* Pour que les bordures arrondies s'appliquent à l'image */
+        }
+        .article-header {
+            display: flex;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #f3f4f6; /* gray-100 */
+        }
+        .profile-pic {
+            width: 48px; /* h-12, w-12 */
+            height: 48px;
+            border-radius: 9999px; /* rounded-full */
+            object-fit: cover;
+            margin-right: 0.75rem; /* mr-3 */
+        }
+        .article-body {
+            padding: 1.5rem;
+        }
+        .article-image {
+            width: 100%;
+            height: auto;
+            max-height: 400px; /* Limite la hauteur des images d'article */
+            object-fit: cover;
+            margin-top: 1rem;
+            border-radius: 0.5rem; /* rounded-lg */
+        }
+        .article-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #f3f4f6; /* gray-100 */
+        }
+        .footer-action {
+            display: flex;
+            align-items: center;
+            color: #4b5563; /* gray-700 */
+            cursor: pointer;
+            transition: color 0.2s ease-in-out;
+            font-weight: 500; /* font-medium */
+        }
+        .footer-action:hover {
+            color: #2563eb; /* blue-600 */
+        }
+        .footer-action-icon {
+            font-size: 1.5rem; /* text-2xl */
+            margin-right: 0.5rem;
+        }
+        /* Styles pour les petites icônes emoji */
+        .emoji-icon {
+            font-size: 1.5rem; /* Ajustez la taille si nécessaire */
+            vertical-align: middle;
+            line-height: 1;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex flex-col min-h-screen">
+
+       <!-- Barre de navigation - Copie de home.html -->
+    <nav class="bg-white p-4 shadow-md sticky top-0 z-50">
+        <div class="container mx-auto flex flex-wrap justify-between items-center">
+             <a href="{% url 'home' %}" class="text-3xl font-extrabold text-blue-800 hover:text-blue-600 transition-colors duration-300 flex items-center">
+                <img src="{% static 'core/images/logo.png' %}" alt="Logo AlexaSchool" class="h-10 w-auto mr-3">
+                ALEXA-SCHOOL
+            </a>
+            <div class="block lg:hidden">
+                <button id="nav-toggle" class="flex items-center px-3 py-2 border rounded text-blue-700 border-blue-700 hover:text-blue-900 hover:border-blue-900">
+                    <svg class="fill-current h-3 w-3" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><title>Menu</title><path d="M0 3h20v2H0V3zm0 6h20v2H0V9zm0 6h20v2H0v-2z"/></svg>
+                </button>
+            </div>
+            <div class="w-full flex-grow lg:flex lg:items-center lg:w-auto hidden lg:block pt-6 lg:pt-0" id="nav-content">
+                <ul class="lg:flex justify-end flex-1 items-center">
+                    <li class="mr-3 mt-2 lg:mt-0">
+                        <a href="{% url 'article_list' %}" class="inline-block py-2 px-4 text-gray-700 font-semibold hover:text-blue-700 hover:bg-gray-100 rounded-md transition duration-300">Articles</a>
+                    </li>
+                    {% if not user.is_authenticated %}
+                    <li class="mr-3 mt-2 lg:mt-0">
+                        <a href="{% url 'pre_inscription' %}" class="inline-block py-2 px-4 text-gray-700 font-semibold hover:text-blue-700 hover:bg-gray-100 rounded-md transition duration-300">Pré-inscription</a>
+                    </li>
+                    {% endif %}
+
+                    {% if user.is_authenticated %}
+                        {% if user.etudiant %}
+                            <li class="mr-3 mt-2 lg:mt-0">
+                                <a href="{% url 'consultation_notes' %}" class="inline-block py-2 px-4 text-gray-700 font-semibold hover:text-blue-700 hover:bg-gray-100 rounded-md transition duration-300">Mes Notes</a>
+                            </li>
+                        {% endif %}
+                        {% if user.formateur %}
+                            <li class="mr-3 mt-2 lg:mt-0">
+                                <a href="{% url 'formateur_tableau_de_bord' %}" class="inline-block py-2 px-4 text-gray-700 font-semibold hover:text-blue-700 hover:bg-gray-100 rounded-md transition duration-300">Mon Tableau de Bord</a>
+                            </li>
+                        {% endif %}
+                        {% if user.is_staff %}
+                            <li class="mr-3 mt-2 lg:mt-0">
+                                <a href="{% url 'admin:index' %}" class="inline-block py-2 px-4 text-gray-700 font-semibold hover:text-blue-700 hover:bg-gray-100 rounded-md transition duration-300">Administration</a>
+                            </li>
+                            <li class="mr-3 mt-2 lg:mt-0">
+                                <a href="{% url 'rapport_heures_formateurs' %}" class="inline-block py-2 px-4 text-gray-700 font-semibold hover:text-blue-700 hover:bg-gray-100 rounded-md transition duration-300">Rapport Heures</a>
+                            </li>
+                            <li class="mr-3 mt-2 lg:mt-0">
+                                <a href="{% url 'emargement_validation' %}" class="inline-block py-2 px-4 text-gray-700 font-semibold hover:text-blue-700 hover:bg-gray-100 rounded-md transition duration-300">Valider Émargements</a>
+                            </li>
+                        {% endif %}
+                        <li class="mt-2 lg:mt-0">
+                            <form action="{% url 'logout' %}" method="post" class="inline">
+                                {% csrf_token %}
+                                <button type="submit" class="bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600 transition duration-300">Déconnexion</button>
+                            </form>
+                        </li>
+                    {% else %}
+                        <li class="mt-2 lg:mt-0">
+                            <a href="{% url 'login' %}" class="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition duration-300">Se connecter</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Contenu Principal -->
+    <main class="flex-grow flex flex-col items-center p-4">
+        <div class="w-full max-w-2xl mt-8 mb-8">
+            <h1 class="text-4xl font-extrabold text-gray-900 text-center mb-8">Dernières Actualités et Articles</h1>
+            <div class="flex justify-between items-center mb-6">
+            <div>
+                {# Correction ici: Utilisation de hasattr pour vérifier la liaison ou user.etudiant directement #}
+                {# La condition a été simplifiée pour s'assurer qu'elle est correctement parsée par le moteur de template. #}
+                {% if user.is_authenticated %}
+                    {% if user.is_staff or user.etudiant %}
+                        <a href="{% url 'article_create' %}" class="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition duration-300">
+                            + Publier un Article
+                        </a>
+                    {% endif %}
+                 {% endif %}
+
+                <a href="{% url 'home' %}" class="ml-2 bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600 transition duration-300">
+                    Accueil
+                </a>
+            </div>
+        </div>
+
+            {% if articles %}
+                {% for article in articles %}
+                    <div class="article-card">
+                        <!-- En-tête de l'article -->
+                        <div class="article-header">
+                            <img src="{% static 'core/images/logo.png' %}" alt="Photo de profil de l'auteur" class="profile-pic">
+                            <div>
+                                <p class="font-bold text-gray-800">{{ article.auteur.username }}</p>
+                                <p class="text-gray-500 text-sm">Publié le {{ article.date_publication|date:"d M Y à H:i" }}</p>
+                            </div>
+                        </div>
+
+                        <!-- Corps de l'article -->
+                        <div class="article-body">
+                            <h2 class="text-2xl font-bold text-gray-800 mb-2">{{ article.titre }}</h2>
+                            {% if article.image %}
+                                 <a href="{% url 'article_detail' pk=article.pk %}#comments">
+                                    <img src="{{ article.image.url }}" alt="{{ article.titre }}" class="article-image">
+                                </a>
+
+                            {% endif %}
+                            <p class="text-gray-700 mt-4">
+                                {{ article.contenu|truncatechars_html:300|safe }} {# Tronquer le contenu et garder le HTML #}
+                                {% if article.contenu|length > 300 %}
+                                    <a href="{% url 'article_detail' pk=article.pk %}" class="text-blue-600 hover:underline">Lire la suite...</a>
+                                {% endif %}
+                            </p>
+                        </div>
+
+                        <!-- Pied de page de l'article -->
+                        <div class="article-footer">
+                            {# Bouton J'aime #}
+                            <button type="button"
+                                    class="footer-action justify-start w-1/3 like-button {% if article.pk in liked_article_ids %}liked{% endif %}"
+                                    data-article-id="{{ article.pk }}"
+                                    {% if not user.is_authenticated %}disabled title="Connectez-vous pour aimer"{% endif %}> {# Désactiver si non connecté #}
+                                <span class="emoji-icon">👍</span> {# Icône pouce levé #}
+                                <span class="ml-1 like-count-{{ article.pk }}">{{ article.like_count }} J'aime</span> {# Afficher le compteur réel #}
+                            </button>
+
+                            {# Lien Commenter #}
+                            <a href="{% url 'article_detail' pk=article.pk %}#comments" class="footer-action justify-center w-1/3 text-center">
+                                <span class="emoji-icon">💬</span> {# Icône bulle de dialogue #}
+                                <span class="ml-1">7 Commentaires</span> {# Nombre de commentaires factice pour l'instant #}
+                            </a>
+
+                            {# Action Partager #}
+                            <div class="footer-action justify-end w-1/3">
+                                <span class="emoji-icon">🔗</span> {# Icône chaîne #}
+                                <span class="ml-1">Partager</span>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-gray-700 text-center text-lg">Aucun article publié pour le moment.</p>
+            {% endif %}
+        </div>
+    </main>
+
+    <!-- Footer - Copie de home.html pour cohérence -->
+    <footer class="bg-gray-800 text-white py-8 mt-auto px-4">
+        <div class="container mx-auto text-center text-gray-400">
+            <p>&copy; 2025 Alexa School. Tous droits réservés.</p>
+            <p class="text-sm mt-2">
+                <a href="#" class="hover:underline">Politique de confidentialité</a> |
+                <a href="#" class="hover:underline">Conditions d'utilisation</a>
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // JavaScript pour le menu mobile (hamburger icon)
+        document.getElementById('nav-toggle').onclick = function() {
+            document.getElementById('nav-content').classList.toggle('hidden');
+        }
+
+
+         // JavaScript pour la fonction J'aime
+        document.addEventListener('DOMContentLoaded', function() {
+            const likeButtons = document.querySelectorAll('.like-button');
+            const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value; // Obtenir le token CSRF
+
+            likeButtons.forEach(button => {
+                // Ajouter la classe 'liked' si l'article est déjà liké par l'utilisateur
+                // Cette partie est gérée par Django via if article.pk in liked_article_ids dans le HTML initial.
+                // Le JS ne fait que toggler la classe après le clic.
+
+                button.addEventListener('click', function() {
+                    // Vérifier si le bouton est désactivé (utilisateur non connecté)
+                    if (this.disabled) {
+                        return; // Ne rien faire si le bouton est désactivé
+                    }
+
+                    // Désactiver le bouton temporairement pour éviter les clics multiples rapides
+                    this.disabled = true;
+
+                    const articleId = this.dataset.articleId; // Récupérer l'ID de l'article depuis l'attribut data
+                    const likeCountSpan = this.querySelector(`.like-count-${articleId}`); // Sélectionner le span du compteur de likes pour cet article
+                    const currentButton = this; // Référence au bouton cliqué
+                    const emojiSpan = this.querySelector('.emoji-icon');
+
+                    fetch('{% url "like_article" %}', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded', // Important pour Django
+                            'X-CSRFToken': csrftoken, // Inclure le token CSRF
+                        },
+                        body: new URLSearchParams({ // Utiliser URLSearchParams pour envoyer les données
+                            'article_id': articleId
+                        })
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            // Si la réponse n'est pas OK (ex: 403 Forbidden, 404 Not Found)
+                            return response.json().then(err => { throw new Error(err.error || `Erreur HTTP: ${response.status}`); });
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        if (data.new_like_count !== undefined) {
+                            likeCountSpan.textContent = `${data.new_like_count} J'aime`; // Mettre à jour le texte du compteur
+
+                            // Mettre à jour l'état visuel du bouton (liké/non liké)
+                            if (data.liked) {
+                                currentButton.classList.add('liked');
+                                emojiSpan.textContent = '❤️'; // Changer l'emoji pour "aimé"
+                            } else {
+                                currentButton.classList.remove('liked');
+                                emojiSpan.textContent = '👍'; // Revenir à l'emoji "non aimé"
+                            }
+                            console.log(`Article ${articleId} liked state: ${data.liked}, New count: ${data.new_like_count}`);
+                        } else {
+                            console.error('Réponse inattendue:', data);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Erreur lors du like/unlike de l\'article:', error);
+                        // Vous pouvez afficher un message d'erreur à l'utilisateur ici
+                        // alert('Impossible de traiter votre demande : ' + error.message);
+                    })
+                    .finally(() => {
+                        currentButton.disabled = false; // Réactiver le bouton
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>

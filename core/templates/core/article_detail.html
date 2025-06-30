@@ -1,0 +1,211 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ article.titre }} - ALEXA-SCHOOL</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            color: #333;
+            background-image: url('{% static "core/images/al.png" %}');
+        }
+        .article-detail-card {
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .article-image-detail {
+            width: 100%;
+            height: auto;
+            max-height: 500px;
+            object-fit: contain; /* Utiliser 'contain' pour ne pas couper l'image */
+            margin-top: 1.5rem;
+            margin-bottom: 2rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .profile-pic-small {
+            width: 32px; /* h-8, w-8 */
+            height: 32px;
+            border-radius: 9999px; /* rounded-full */
+            object-fit: cover;
+            margin-right: 0.5rem; /* mr-2 */
+        }
+        .comment-card {
+            background-color: #f8fafc; /* gray-50 */
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border: 1px solid #e2e8f0; /* gray-200 */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex flex-col min-h-screen">
+
+    <!-- Barre de navigation - Copie de home.html -->
+    <nav class="bg-white p-4 shadow-md sticky top-0 z-50">
+        <div class="container mx-auto flex flex-wrap justify-between items-center">
+             <a href="{% url 'home' %}" class="text-3xl font-extrabold text-blue-800 hover:text-blue-600 transition-colors duration-300 flex items-center">
+                <img src="{% static 'core/images/logo.png' %}" alt="Logo AlexaSchool" class="h-10 w-auto mr-3">
+                ALEXA-SCHOOL
+            </a>
+            <div class="block lg:hidden">
+                <button id="nav-toggle" class="flex items-center px-3 py-2 border rounded text-blue-700 border-blue-700 hover:text-blue-900 hover:border-blue-900">
+                    <svg class="fill-current h-3 w-3" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><title>Menu</title><path d="M0 3h20v2H0V3zm0 6h20v2H0V9zm0 6h20v2H0v-2z"/></svg>
+                </button>
+            </div>
+            <div class="w-full flex-grow lg:flex lg:items-center lg:w-auto hidden lg:block pt-6 lg:pt-0" id="nav-content">
+                <ul class="lg:flex justify-end flex-1 items-center">
+                    <li class="mr-3 mt-2 lg:mt-0">
+                        <a href="{% url 'article_list' %}" class="inline-block py-2 px-4 text-gray-700 font-semibold hover:text-blue-700 hover:bg-gray-100 rounded-md transition duration-300">Articles</a>
+                    </li>
+                    {% if not user.is_authenticated %}
+                    <li class="mr-3 mt-2 lg:mt-0">
+                        <a href="{% url 'pre_inscription' %}" class="inline-block py-2 px-4 text-gray-700 font-semibold hover:text-blue-700 hover:bg-gray-100 rounded-md transition duration-300">Pré-inscription</a>
+                    </li>
+                    {% endif %}
+
+                    {% if user.is_authenticated %}
+                        {% if user.etudiant %}
+                            <li class="mr-3 mt-2 lg:mt-0">
+                                <a href="{% url 'consultation_notes' %}" class="inline-block py-2 px-4 text-gray-700 font-semibold hover:text-blue-700 hover:bg-gray-100 rounded-md transition duration-300">Mes Notes</a>
+                            </li>
+                        {% endif %}
+                        {% if user.formateur %}
+                            <li class="mr-3 mt-2 lg:mt-0">
+                                <a href="{% url 'formateur_tableau_de_bord' %}" class="inline-block py-2 px-4 text-gray-700 font-semibold hover:text-blue-700 hover:bg-gray-100 rounded-md transition duration-300">Mon Tableau de Bord</a>
+                            </li>
+                        {% endif %}
+                        {% if user.is_staff %}
+                            <li class="mr-3 mt-2 lg:mt-0">
+                                <a href="{% url 'admin:index' %}" class="inline-block py-2 px-4 text-gray-700 font-semibold hover:text-blue-700 hover:bg-gray-100 rounded-md transition duration-300">Administration</a>
+                            </li>
+                            <li class="mr-3 mt-2 lg:mt-0">
+                                <a href="{% url 'rapport_heures_formateurs' %}" class="inline-block py-2 px-4 text-gray-700 font-semibold hover:text-blue-700 hover:bg-gray-100 rounded-md transition duration-300">Rapport Heures</a>
+                            </li>
+                            <li class="mr-3 mt-2 lg:mt-0">
+                                <a href="{% url 'emargement_validation' %}" class="inline-block py-2 px-4 text-gray-700 font-semibold hover:text-blue-700 hover:bg-gray-100 rounded-md transition duration-300">Valider Émargements</a>
+                            </li>
+                        {% endif %}
+                        <li class="mt-2 lg:mt-0">
+                            <form action="{% url 'logout' %}" method="post" class="inline">
+                                {% csrf_token %}
+                                <button type="submit" class="bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600 transition duration-300">Déconnexion</button>
+                            </form>
+                        </li>
+                    {% else %}
+                        <li class="mt-2 lg:mt-0">
+                            <a href="{% url 'login' %}" class="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition duration-300">Se connecter</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+<!-- Contenu Principal -->
+    <main class="flex-grow flex flex-col items-center p-4">
+        <div class="w-full max-w-3xl mt-8 mb-8">
+            <!-- Article complet -->
+            <div class="article-detail-card">
+                <div class="flex items-center mb-4">
+                    <img src="{% static 'core/images/logo.png' %}" alt="Photo de profil de l'auteur" class="profile-pic-small">
+                    <div>
+                        <p class="font-bold text-gray-800 text-lg">{{ article.auteur.username }}</p>
+                        <p class="text-gray-500 text-sm">Publié le {{ article.date_publication|date:"d M Y à H:i" }}</p>
+                    </div>
+                </div>
+
+                <h1 class="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4">{{ article.titre }}</h1>
+                {% if article.image %}
+                    <img src="{{ article.image.url }}" alt="{{ article.titre }}" class="article-image-detail">
+                {% endif %}
+                <div class="prose max-w-none text-gray-700 leading-relaxed">
+                    {{ article.contenu|safe }} {# Afficher le contenu complet et en HTML #}
+                </div>
+            </div>
+
+            <!-- Section Commentaires -->
+            <div id="comments" class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">Commentaires ({{ comments.count }})</h2>
+
+                {# Affichage des messages de succès/erreur #}
+                {% if messages %}
+                    <ul class="messages mb-4">
+                        {% for message in messages %}
+                            <li{% if message.tags %} class="{{ message.tags }} p-3 rounded-md mb-2 {% if message.tags == 'success' %}bg-green-100 text-green-700{% elif message.tags == 'error' %}bg-red-100 text-red-700{% elif message.tags == 'warning' %}bg-yellow-100 text-yellow-700{% endif %}"{% endif %}>
+                                {{ message }}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+
+                {# Formulaire d'ajout de commentaire #}
+                {% if user_is_authenticated %}
+                    <div class="mb-8">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-4">Ajouter un commentaire</h3>
+                        <form method="post" action="{% url 'article_detail' pk=article.pk %}">
+                            {% csrf_token %}
+                            <textarea name="comment_content" id="comment_content" rows="4"
+                                      class="shadow appearance-none border rounded-md w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline focus:border-blue-500 mb-3"
+                                      placeholder="Écrivez votre commentaire ici..." required></textarea>
+                            <button type="submit" class="bg-blue-600 text-white py-2 px-5 rounded-md hover:bg-blue-700 transition duration-300">
+                                Poster le commentaire
+                            </button>
+                        </form>
+                    </div>
+                {% else %}
+                    <p class="text-gray-600 text-center mb-6">
+                        <a href="{% url 'login' %}" class="text-blue-600 hover:underline font-semibold">Connectez-vous</a> pour laisser un commentaire.
+                    </p>
+                {% endif %}
+
+                {# Liste des commentaires #}
+                {% if comments %}
+                    <div>
+                        {% for comment in comments %}
+                            <div class="comment-card">
+                                <div class="flex items-center mb-2">
+                                    <img src="{% static 'core/images/logo.png' %}" alt="Photo de profil de l'utilisateur" class="profile-pic-small">
+                                    <div>
+                                        <p class="font-semibold text-gray-800">{{ comment.user.username }}</p>
+                                        <p class="text-gray-500 text-xs">{{ comment.date_posted|date:"d M Y à H:i" }}</p>
+                                    </div>
+                                </div>
+                                <p class="text-gray-700">{{ comment.content }}</p>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-gray-600 text-center">Aucun commentaire pour le moment. Soyez le premier à commenter !</p>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+
+
+    <!-- Footer - Copie de home.html -->
+    <footer class="bg-gray-800 text-white py-8 mt-auto px-4">
+        <div class="container mx-auto text-center text-gray-400">
+            <p>&copy; 2025 Alexa-School. Tous droits réservés.</p>
+            <p class="text-sm mt-2">
+                <a href="#" class="hover:underline">Politique de confidentialité</a> |
+                <a href="#" class="hover:underline">Conditions d'utilisation</a>
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // JavaScript pour le menu mobile (hamburger icon)
+        document.getElementById('nav-toggle').onclick = function() {
+            document.getElementById('nav-content').classList.toggle('hidden');
+        }
+    </script>
+</body>
+</html>

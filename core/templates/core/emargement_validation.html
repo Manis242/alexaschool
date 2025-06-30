@@ -1,0 +1,247 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Validation des Émargements</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .table-auto {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .table-auto th, .table-auto td {
+            border: 1px solid #e2e8f0;
+            padding: 0.75rem;
+            text-align: left;
+            vertical-align: top;
+        }
+        .table-auto th {
+            background-color: #f8fafc;
+            font-weight: 600;
+            color: #4a5568;
+        }
+        .reject-form-container {
+            display: none;
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #fefcbf;
+            border-radius: 0.375rem;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex flex-col min-h-screen">
+ <!-- Barre de navigation - Copie de home.html -->
+    <nav class="bg-white p-4 shadow-md sticky top-0 z-50">
+        <div class="container mx-auto flex flex-wrap justify-between items-center">
+             <a href="{% url 'home' %}" class="text-3xl font-extrabold text-blue-800 hover:text-blue-600 transition-colors duration-300 flex items-center">
+                <img src="{% static 'core/images/logo.png' %}" alt="Logo AlexaSchool" class="h-10 w-auto mr-3">
+                ALEXA-SCHOOL
+            </a>
+            <div class="block lg:hidden">
+                <button id="nav-toggle" class="flex items-center px-3 py-2 border rounded text-blue-700 border-blue-700 hover:text-blue-900 hover:border-blue-900">
+                    <svg class="fill-current h-3 w-3" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><title>Menu</title><path d="M0 3h20v2H0V3zm0 6h20v2H0V9zm0 6h20v2H0v-2z"/></svg>
+                </button>
+            </div>
+            <div class="w-full flex-grow lg:flex lg:items-center lg:w-auto hidden lg:block pt-6 lg:pt-0" id="nav-content">
+                <ul class="lg:flex justify-end flex-1 items-center">
+                    <li class="mr-3 mt-2 lg:mt-0">
+                        <a href="{% url 'article_list' %}" class="inline-block py-2 px-4 text-gray-700 font-semibold hover:text-blue-700 hover:bg-gray-100 rounded-md transition duration-300">Articles</a>
+                    </li>
+                    {% if not user.is_authenticated %}
+                    <li class="mr-3 mt-2 lg:mt-0">
+                        <a href="{% url 'pre_inscription' %}" class="inline-block py-2 px-4 text-gray-700 font-semibold hover:text-blue-700 hover:bg-gray-100 rounded-md transition duration-300">Pré-inscription</a>
+                    </li>
+                    {% endif %}
+
+                    {% if user.is_authenticated %}
+                        {% if user.etudiant %}
+                            <li class="mr-3 mt-2 lg:mt-0">
+                                <a href="{% url 'consultation_notes' %}" class="inline-block py-2 px-4 text-gray-700 font-semibold hover:text-blue-700 hover:bg-gray-100 rounded-md transition duration-300">Mes Notes</a>
+                            </li>
+                        {% endif %}
+                        {% if user.formateur %}
+                            <li class="mr-3 mt-2 lg:mt-0">
+                                <a href="{% url 'formateur_tableau_de_bord' %}" class="inline-block py-2 px-4 text-gray-700 font-semibold hover:text-blue-700 hover:bg-gray-100 rounded-md transition duration-300">Mon Tableau de Bord</a>
+                            </li>
+                        {% endif %}
+                        {% if user.is_staff %}
+                            <li class="mr-3 mt-2 lg:mt-0">
+                                <a href="{% url 'admin:index' %}" class="inline-block py-2 px-4 text-gray-700 font-semibold hover:text-blue-700 hover:bg-gray-100 rounded-md transition duration-300">Administration</a>
+                            </li>
+                            <li class="mr-3 mt-2 lg:mt-0">
+                                <a href="{% url 'rapport_heures_formateurs' %}" class="inline-block py-2 px-4 text-gray-700 font-semibold hover:text-blue-700 hover:bg-gray-100 rounded-md transition duration-300">Rapport Heures</a>
+                            </li>
+                            <li class="mr-3 mt-2 lg:mt-0">
+                                <a href="{% url 'emargement_validation' %}" class="inline-block py-2 px-4 text-gray-700 font-semibold hover:text-blue-700 hover:bg-gray-100 rounded-md transition duration-300">Valider Émargements</a>
+                            </li>
+                        {% endif %}
+                        <li class="mt-2 lg:mt-0">
+                            <form action="{% url 'logout' %}" method="post" class="inline">
+                                {% csrf_token %}
+                                <button type="submit" class="bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600 transition duration-300">Déconnexion</button>
+                            </form>
+                        </li>
+                    {% else %}
+                        <li class="mt-2 lg:mt-0">
+                            <a href="{% url 'login' %}" class="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition duration-300">Se connecter</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="flex-grow flex flex-col items-center p-4">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-bold text-gray-800">Validation des Émargements des Formateurs</h1>
+
+        </div>
+
+        {% if messages %}
+            <ul class="mb-4">
+                {% for message in messages %}
+                    <li class="p-3 rounded-md {% if message.tags == 'success' %}bg-green-100 text-green-700{% elif message.tags == 'error' %}bg-red-100 text-red-700{% elif message.tags == 'warning' %}bg-yellow-100 text-yellow-700{% endif %}">
+                        {{ message }}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">Émargements en attente de validation</h2>
+        {% if emargements_en_attente %}
+            <div class="overflow-x-auto mb-8">
+                <table class="table-auto min-w-full">
+                    <thead>
+                        <tr>
+                            <th class="px-4 py-2">Formateur</th>
+                            <th class="px-4 py-2">Matière</th>
+                            <th class="px-4 py-2">Début</th>
+                            <th class="px-4 py-2">Fin</th>
+                            <th class="px-4 py-2">Durée (h)</th>
+                            <th class="px-4 py-2">Salle</th>
+                            <th class="px-4 py-2">Notes</th>
+                            <th class="px-4 py-2 text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in emargements_en_attente %}
+                            <tr>
+                                <td class="px-4 py-2">{{ entry.formateur.prenom }} {{ entry.formateur.nom }}</td>
+                                <td class="px-4 py-2">{% if entry.matiere %}
+                                                         {{ entry.matiere.nom }}
+                                                      {% else %}
+                                                             N/A
+                                                      {% endif %}</td>
+                                <td class="px-4 py-2">{{ entry.date_heure_debut|date:"d M Y H:i" }}</td>
+                                <td class="px-4 py-2">{{ entry.date_heure_fin|date:"d M Y H:i" }}</td>
+                                <td class="px-4 py-2">{{ entry.duree_heures|floatformat:2 }}</td>
+                                <td class="px-4 py-2">{{ entry.salle|default:"N/A" }}</td>
+                                <td class="px-4 py-2">{{ entry.notes|default:"N/A" }}</td>
+                                <td class="px-4 py-2 text-center">
+                                    <form action="{% url 'emargement_validation' %}" method="post" class="inline-block mr-2">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="record_id" value="{{ entry.pk }}">
+                                        <input type="hidden" name="action" value="valider">
+                                        <button type="submit" class="bg-green-500 text-white py-1 px-3 rounded-md hover:bg-green-600 transition duration-300">
+                                            Valider
+                                        </button>
+                                    </form>
+                                    <button onclick="toggleRejectForm('{{ entry.pk }}')" class="bg-red-500 text-white py-1 px-3 rounded-md hover:bg-red-600 transition duration-300">
+                                        Rejeter
+                                    </button>
+                                    <div id="reject-form-{{ entry.pk }}" class="reject-form-container">
+                                        <form action="{% url 'emargement_validation' %}" method="post">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="record_id" value="{{ entry.pk }}">
+                                            <input type="hidden" name="action" value="rejeter">
+                                            <label for="id_motif_rejet_{{ entry.pk }}" class="block text-sm font-medium text-gray-700 mb-1">Motif de rejet:</label>
+                                            <textarea name="motif_rejet" id="id_motif_rejet_{{ entry.pk }}" rows="2" class="w-full border rounded-md shadow-sm p-2 text-gray-700 focus:ring-blue-500 focus:border-blue-500"></textarea>
+                                            <button type="submit" class="mt-2 w-full bg-red-600 text-white py-1 px-3 rounded-md hover:bg-red-700 transition duration-300">Confirmer Rejet</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-gray-700 mb-8">Aucun émargement en attente de validation pour le moment.</p>
+        {% endif %}
+
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">Émargements récemment traités</h2>
+        {% if emargements_traites_recent %}
+            <div class="overflow-x-auto">
+                <table class="table-auto min-w-full">
+                    <thead>
+                        <tr>
+                            <th class="px-4 py-2">Formateur</th>
+                            <th class="px-4 py-2">Matière</th>
+                            <th class="px-4 py-2">Début</th>
+                            <th class="px-4 py-2">Fin</th>
+                            <th class="px-4 py-2">Statut</th>
+                            <th class="px-4 py-2">Date Traitement</th>
+                            <th class="px-4 py-2">Motif Rejet</th>
+                            <th class="px-4 py-2">Validateur</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in emargements_traites_recent %}
+                            <tr>
+                                <td class="px-4 py-2">{{ entry.formateur.prenom }} {{ entry.formateur.nom }}</td>
+                                <td class="px-4 py-2">{% if entry.matiere %}
+                                                      {{    entry.matiere.nom }}
+                                                      {% else %}
+                                                            N/A
+                                                      {% endif %}
+                                                    </td>
+                                <td class="px-4 py-2">{{ entry.date_heure_debut|date:"d M Y H:i" }}</td>
+                                <td class="px-4 py-2">{{ entry.date_heure_fin|date:"d M Y H:i" }}</td>
+                                <td class="px-4 py-2">
+                                    <span class="font-semibold {% if entry.statut == 'VALIDE' %}text-green-600{% elif entry.statut == 'REJETE' %}text-red-600{% endif %}">
+                                        {{ entry.get_statut_display }}
+                                    </span>
+                                </td>
+                                <td class="px-4 py-2">{{ entry.date_validation_rejet|date:"d M Y H:i" }}</td>
+                                <td class="px-4 py-2">{{ entry.motif_rejet|default:"N/A" }}</td>
+                                <td class="px-4 py-2">  {% if entry.validateur %}
+                                                                {{ entry.validateur.username }}
+                                                        {% else %}
+                                                                N/A
+                                                        {% endif %}
+                                                        </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <p class="text-gray-700">Aucun émargement récemment traité.</p>
+        {% endif %}
+    </div>
+
+    <!-- Footer - Copie de home.html -->
+    <footer class="bg-gray-800 text-white py-8 mt-auto px-4">
+        <div class="container mx-auto text-center text-gray-400">
+            <p>&copy; 2025 Alexa School. Tous droits réservés.</p>
+            <p class="text-sm mt-2">
+                <a href="#" class="hover:underline">Politique de confidentialité</a> |
+                <a href="#" class="hover:underline">Conditions d'utilisation</a>
+            </p>
+        </div>
+    </footer>
+
+    <script>
+        // JavaScript pour le menu mobile (hamburger icon)
+        document.getElementById('nav-toggle').onclick = function() {
+            document.getElementById('nav-content').classList.toggle('hidden');
+        }
+    </script>
+</body>
+</html>
