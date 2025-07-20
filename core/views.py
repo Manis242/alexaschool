@@ -9,11 +9,11 @@ from django.http import Http404, JsonResponse # NOUVEAU: Importez JsonResponse
 from django.db import transaction  # Pour gérer les transactions de base de données
 from django.forms import modelform_factory  # Pour créer un formulaire simple pour le motif de rejet
 from django.utils import timezone
+from django.core.paginator import Paginator # NOUVEAU: Pour la pagination
 
-from .forms import PreInscriptionForm, EmargementForm, ArticleForm
-from .models import Etudiant, Inscription, Note, Coefficient, Formateur, Emargement, Article, Semestre, \
-    EmargementTemporaire, Like, Comment
-
+from .forms import PreInscriptionForm, EmargementForm, ArticleForm, EtudiantAdminForm, InscriptionStatusForm # NOUVEAU: Importez les nouveaux formulaires
+from .models import Etudiant, Inscription, Note, Coefficient, Formateur, Emargement, Article, Semestre,EmargementTemporaire, Like, Comment, Option, Niveau # NOUVEAU: Importez Option et Niveau si nécessaire
+from .forms import NoteAdminForm, Matiere, MatiereAdminForm, FormateurAdminForm
 
 # Fonctions utilitaires pour les tests d'accès
 def is_formateur(user):
@@ -430,3 +430,298 @@ def article_create_update_view(request, pk=None):
 
     return render(request, 'core/article_form.html', {'form': form, 'article': article})
 
+@login_required
+@user_passes_test(is_admin, login_url='login')
+def custom_admin_dashboard_view(request):
+    """
+    Vue pour le tableau de bord d'administration personnalisé.
+    Affiche des statistiques clés et des liens rapides.
+    """
+    # Importations locales pour éviter les problèmes de dépendances circulaires
+    from .models import Etudiant, Formateur, Inscription, Article, EmargementTemporaire
+
+    # Récupération des statistiques
+    total_etudiants = Etudiant.objects.count()
+    total_formateurs = Formateur.objects.count()
+    inscriptions_en_attente = Inscription.objects.filter(statut='PRE_INSCRIPTION').count()
+    articles_publies = Article.objects.filter(est_publie=True).count()
+    emargements_en_attente = EmargementTemporaire.objects.filter(statut='EN_ATTENTE').count()
+
+    context = {
+        'total_etudiants': total_etudiants,
+        'total_formateurs': total_formateurs,
+        'inscriptions_en_attente': inscriptions_en_attente,
+        'articles_publies': articles_publies,
+        'emargements_en_attente': emargements_en_attente,
+        'user': request.user, # Passe l'objet user au template
+    }
+    return render(request, 'core/custom_admin_dashboard.html', context)
+
+
+
+# NOUVEAU: Vues pour la gestion des Étudiants dans l'admin personnalisé
+
+@login_required
+@user_passes_test(is_admin, login_url='login')
+def etudiant_list_view(request):
+    """Affiche la liste de tous les étudiants."""
+    etudiants = Etudiant.objects.all().order_by('nom', 'prenom')
+    paginator = Paginator(etudiants, 10) # 10 étudiants par page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    context = {
+        'page_obj': page_obj,
+        'options': Option.objects.all(), # Pour le filtrage si nécessaire
+        'niveaux': Niveau.objects.all(), # Pour le filtrage si nécessaire
+    }
+    return render(request, 'core/etudiant_list.html', context)
+
+@login_required
+@user_passes_test(is_admin, login_url='login')
+def etudiant_form_view(request, pk=None):
+    """Permet la création ou la modification d'un étudiant."""
+    etudiant = None
+    if pk:
+        etudiant = get_object_or_404(Etudiant, pk=pk)
+
+    if request.method == 'POST':
+        form = EtudiantAdminForm(request.POST, request.FILES, instance=etudiant)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Étudiant enregistré avec succès !")
+            return redirect('custom_etudiant_list')
+        else:
+            messages.error(request, "Veuillez corriger les erreurs dans le formulaire.")
+    else:
+        form = EtudiantAdminForm(instance=etudiant)
+
+    context = {
+        'form': form,
+        'etudiant': etudiant,
+        'is_new': etudiant is None,
+    }
+    return render(request, 'core/etudiant_form.html', context)
+
+@login_required
+@user_passes_test(is_admin, login_url='login')
+def etudiant_delete_view(request, pk):
+    """Permet de supprimer un étudiant."""
+    etudiant = get_object_or_404(Etudiant, pk=pk)
+    if request.method == 'POST':
+        etudiant.delete()
+        messages.success(request, "Étudiant supprimé avec succès.")
+        return redirect('custom_etudiant_list')
+    context = {'etudiant': etudiant}
+    return render(request, 'core/etudiant_confirm_delete.html', context) # Vous devrez créer ce template
+
+# NOUVEAU: Vues pour la gestion des Inscriptions dans l'admin personnalisé
+
+@login_required
+@user_passes_test(is_admin, login_url='login')
+def inscription_list_view(request):
+    """Affiche la liste de toutes les inscriptions."""
+    inscriptions = Inscription.objects.all().order_by('-date_demande')
+    paginator = Paginator(inscriptions, 10) # 10 inscriptions par page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    context = {
+        'page_obj': page_obj,
+        'InscriptionStatusForm': InscriptionStatusForm(), # Passer une instance du formulaire de statut
+    }
+    return render(request, 'core/inscription_list.html', context)
+
+@login_required
+@user_passes_test(is_admin, login_url='login')
+def inscription_update_status_view(request, pk):
+    """Permet de mettre à jour le statut d'une inscription."""
+    inscription = get_object_or_404(Inscription, pk=pk)
+    if request.method == 'POST':
+        form = InscriptionStatusForm(request.POST, instance=inscription)
+        if form.is_valid():
+            inscription = form.save(commit=False)
+            # Logique pour les actions personnalisées comme dans admin.py si nécessaire
+            # Par exemple, si le statut devient 'INSCRIT', vous pourriez vouloir envoyer un email
+            if inscription.statut == 'INSCRIT' and inscription.statut != Inscription.objects.get(pk=pk).statut:
+                 # Envoyer un email avec les identifiants
+                subject = 'Votre inscription est confirmée - ALEXA SCHOOL'
+                message = (
+                    f"Bonjour {inscription.etudiant.prenom},\n\n"
+                    f"Votre inscription à l'école ALEXA SCHOOL est maintenant confirmée. "
+                    f"Vos identifiants de connexion vous seront envoyés séparément ou sont les mêmes que ceux utilisés pour la pré-inscription.\n\n"
+                    "Cordialement,\nL'Administration de l'École ALEXA SCHOOL"
+                )
+                from_email = settings.DEFAULT_FROM_EMAIL
+                recipient_list = [inscription.etudiant.email]
+                try:
+                    send_mail(subject, message, from_email, recipient_list, fail_silently=False)
+                    print(f"E-mail de confirmation d'inscription envoyé à {inscription.etudiant.email}")
+                except Exception as e:
+                    print(f"Erreur lors de l'envoi de l'e-mail de confirmation d'inscription: {e}")
+
+            inscription.date_validation = timezone.now() # Mettre à jour la date de validation
+            inscription.save()
+            messages.success(request, f"Statut de l'inscription de {inscription.etudiant.nom} {inscription.etudiant.prenom} mis à jour à '{inscription.get_statut_display()}'.")
+        else:
+            messages.error(request, "Erreur lors de la mise à jour du statut.")
+    return redirect('custom_inscription_list') # Redirige toujours vers la liste après l'action
+
+# NOUVEAU: Vues pour la gestion des Formateurs dans l'admin personnalisé
+
+@login_required
+@user_passes_test(is_admin, login_url='login')
+def formateur_list_view(request):
+    """Affiche la liste de tous les formateurs."""
+    formateurs = Formateur.objects.all().order_by('nom', 'prenom')
+    paginator = Paginator(formateurs, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    context = {
+        'page_obj': page_obj,
+    }
+    return render(request, 'core/formateur_list.html', context)
+
+@login_required
+@user_passes_test(is_admin, login_url='login')
+def formateur_form_view(request, pk=None):
+    """Permet la création ou la modification d'un formateur."""
+    formateur = None
+    if pk:
+        formateur = get_object_or_404(Formateur, pk=pk)
+
+    if request.method == 'POST':
+        form = FormateurAdminForm(request.POST, request.FILES, instance=formateur)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Formateur enregistré avec succès !")
+            return redirect('custom_formateur_list')
+        else:
+            messages.error(request, "Veuillez corriger les erreurs dans le formulaire.")
+    else:
+        form = FormateurAdminForm(instance=formateur)
+
+    context = {
+        'form': form,
+        'formateur': formateur,
+        'is_new': formateur is None,
+    }
+    return render(request, 'core/formateur_form.html', context)
+
+@login_required
+@user_passes_test(is_admin, login_url='login')
+def formateur_delete_view(request, pk):
+    """Permet de supprimer un formateur."""
+    formateur = get_object_or_404(Formateur, pk=pk)
+    if request.method == 'POST':
+        formateur.delete()
+        messages.success(request, "Formateur supprimé avec succès.")
+        return redirect('custom_formateur_list')
+    context = {'formateur': formateur}
+    return render(request, 'core/formateur_confirm_delete.html', context)
+
+
+# NOUVEAU: Vues pour la gestion des Matières dans l'admin personnalisé
+
+@login_required
+@user_passes_test(is_admin, login_url='login')
+def matiere_list_view(request):
+    """Affiche la liste de toutes les matières."""
+    matieres = Matiere.objects.all().order_by('nom')
+    paginator = Paginator(matieres, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    context = {
+        'page_obj': page_obj,
+    }
+    return render(request, 'core/matiere_list.html', context)
+
+@login_required
+@user_passes_test(is_admin, login_url='login')
+def matiere_form_view(request, pk=None):
+    """Permet la création ou la modification d'une matière."""
+    matiere = None
+    if pk:
+        matiere = get_object_or_404(Matiere, pk=pk)
+
+    if request.method == 'POST':
+        form = MatiereAdminForm(request.POST, instance=matiere)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Matière enregistrée avec succès !")
+            return redirect('custom_matiere_list')
+        else:
+            messages.error(request, "Veuillez corriger les erreurs dans le formulaire.")
+    else:
+        form = MatiereAdminForm(instance=matiere)
+
+    context = {
+        'form': form,
+        'matiere': matiere,
+        'is_new': matiere is None,
+    }
+    return render(request, 'core/matiere_form.html', context)
+
+@login_required
+@user_passes_test(is_admin, login_url='login')
+def matiere_delete_view(request, pk):
+    """Permet de supprimer une matière."""
+    matiere = get_object_or_404(Matiere, pk=pk)
+    if request.method == 'POST':
+        matiere.delete()
+        messages.success(request, "Matière supprimée avec succès.")
+        return redirect('custom_matiere_list')
+    context = {'matiere': matiere}
+    return render(request, 'core/matiere_confirm_delete.html', context)
+
+
+# NOUVEAU: Vues pour la gestion des Notes dans l'admin personnalisé
+
+@login_required
+@user_passes_test(is_admin, login_url='login')
+def note_list_view(request):
+    """Affiche la liste de toutes les notes."""
+    notes = Note.objects.all().order_by('-date_saisie', 'etudiant__nom', 'matiere__nom')
+    paginator = Paginator(notes, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    context = {
+        'page_obj': page_obj,
+    }
+    return render(request, 'core/note_list.html', context)
+
+@login_required
+@user_passes_test(is_admin, login_url='login')
+def note_form_view(request, pk=None):
+    """Permet la création ou la modification d'une note."""
+    note = None
+    if pk:
+        note = get_object_or_404(Note, pk=pk)
+
+    if request.method == 'POST':
+        form = NoteAdminForm(request.POST, instance=note)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Note enregistrée avec succès !")
+            return redirect('custom_note_list')
+        else:
+            messages.error(request, "Veuillez corriger les erreurs dans le formulaire.")
+    else:
+        form = NoteAdminForm(instance=note)
+
+    context = {
+        'form': form,
+        'note': note,
+        'is_new': note is None,
+    }
+    return render(request, 'core/note_form.html', context)
+
+@login_required
+@user_passes_test(is_admin, login_url='login')
+def note_delete_view(request, pk):
+    """Permet de supprimer une note."""
+    note = get_object_or_404(Note, pk=pk)
+    if request.method == 'POST':
+        note.delete()
+        messages.success(request, "Note supprimée avec succès.")
+        return redirect('custom_note_list')
+    context = {'note': note}
+    return render(request, 'core/note_confirm_delete.html', context)

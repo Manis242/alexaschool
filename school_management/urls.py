@@ -46,8 +46,38 @@ urlpatterns = [
          auth_views.PasswordResetCompleteView.as_view(template_name='core/password_reset_complete.html'),
          name='password_reset_complete'),
 
+    path('custom-admin/', views.custom_admin_dashboard_view, name='custom_admin_dashboard'),
     # URLs pour les formateurs et l'administration des émargements
     path('formateur/emargement/', include('core.urls')), # C'est déjà inclus via `path('', include('core.urls'))`
+
+    # NOUVEAU: URLs pour la gestion des Étudiants dans l'admin personnalisé
+    path('custom-admin/etudiants/', views.etudiant_list_view, name='custom_etudiant_list'),
+    path('custom-admin/etudiants/nouveau/', views.etudiant_form_view, name='custom_etudiant_create'),
+    path('custom-admin/etudiants/<int:pk>/modifier/', views.etudiant_form_view, name='custom_etudiant_update'),
+    path('custom-admin/etudiants/<int:pk>/supprimer/', views.etudiant_delete_view, name='custom_etudiant_delete'),
+
+    # NOUVEAU: URLs pour la gestion des Inscriptions dans l'admin personnalisé
+    path('custom-admin/inscriptions/', views.inscription_list_view, name='custom_inscription_list'),
+    path('custom-admin/inscriptions/<int:pk>/statut/', views.inscription_update_status_view, name='custom_inscription_update_status'),
+
+    # NOUVEAU: URLs pour la gestion des Formateurs dans l'admin personnalisé
+    path('custom-admin/formateurs/', views.formateur_list_view, name='custom_formateur_list'),
+    path('custom-admin/formateurs/nouveau/', views.formateur_form_view, name='custom_formateur_create'),
+    path('custom-admin/formateurs/<int:pk>/modifier/', views.formateur_form_view, name='custom_formateur_update'),
+    path('custom-admin/formateurs/<int:pk>/supprimer/', views.formateur_delete_view, name='custom_formateur_delete'),
+
+    # NOUVEAU: URLs pour la gestion des Matières dans l'admin personnalisé
+    path('custom-admin/matieres/', views.matiere_list_view, name='custom_matiere_list'),
+    path('custom-admin/matieres/nouveau/', views.matiere_form_view, name='custom_matiere_create'),
+    path('custom-admin/matieres/<int:pk>/modifier/', views.matiere_form_view, name='custom_matiere_update'),
+    path('custom-admin/matieres/<int:pk>/supprimer/', views.matiere_delete_view, name='custom_matiere_delete'),
+
+    # NOUVEAU: URLs pour la gestion des Notes dans l'admin personnalisé
+    path('custom-admin/notes/', views.note_list_view, name='custom_note_list'),
+    path('custom-admin/notes/nouveau/', views.note_form_view, name='custom_note_create'),
+    path('custom-admin/notes/<int:pk>/modifier/', views.note_form_view, name='custom_note_update'),
+    path('custom-admin/notes/<int:pk>/supprimer/', views.note_delete_view, name='custom_note_delete'),
+
 ]
 # URLs spécifiques à l'application core
 urlpatterns += [

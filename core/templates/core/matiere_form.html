@@ -1,0 +1,46 @@
+{% extends 'core/base_admin.html' %}
+
+{% block title %}{% if is_new %}Ajouter une Matière{% else %}Modifier la Matière{% endif %}{% endblock %}
+
+{% block content %}
+<div class="bg-white p-6 rounded-lg shadow-md max-w-2xl mx-auto">
+    <h2 class="text-2xl font-semibold text-gray-800 mb-6 text-center">
+        {% if is_new %}Ajouter une Nouvelle Matière{% else %}Modifier la Matière: {{ matiere.nom }}{% endif %}
+    </h2>
+
+    <form method="post" class="space-y-4">
+        {% csrf_token %}
+        {% for field in form %}
+            <div>
+                <label for="{{ field.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                    {{ field.label }}
+                </label>
+                {{ field }}
+                {% if field.help_text %}
+                    <p class="mt-1 text-sm text-gray-500">{{ field.help_text }}</p>
+                {% endif %}
+                {% for error in field.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endfor %}
+
+        {% if form.non_field_errors %}
+            <div class="p-3 rounded-md bg-red-100 text-red-800">
+                {% for error in form.non_field_errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="flex justify-end space-x-3 mt-6">
+            <a href="{% url 'custom_matiere_list' %}" class="inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                Annuler
+            </a>
+            <button type="submit" class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                {% if is_new %}Ajouter{% else %}Enregistrer les modifications{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

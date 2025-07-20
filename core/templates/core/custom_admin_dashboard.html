@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tableau de Bord Admin - ALEXA SCHOOL</title>
+   <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Configuration de la police Inter */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Styles personnalisés pour les cartes du tableau de bord */
+        .dashboard-card {
+            @apply bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col items-center justify-center text-center;
+        }
+        .dashboard-card-title {
+            @apply text-xl font-semibold text-gray-800 mb-2;
+        }
+        .dashboard-card-value {
+            @apply text-4xl font-bold text-indigo-600;
+        }
+        .dashboard-link {
+            @apply mt-4 inline-block bg-indigo-500 text-white px-4 py-2 rounded-md hover:bg-indigo-600 transition-colors duration-300;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col">
+    <header class="bg-indigo-700 text-white p-4 shadow-md">
+        <div class="container mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold">Tableau de Bord Administrateur</h1>
+            <nav>
+                <ul class="flex space-x-4">
+                    <li><a href="{% url 'home' %}" class="hover:text-indigo-200">Accueil Public</a></li>
+                    <li><a href="{% url 'admin:index' %}" class="hover:text-indigo-200">Admin Django</a></li> {# Lien vers l'admin Django par défaut #}
+                    {% if user.is_authenticated %}
+                        <li><a href="{% url 'logout' %}" class="hover:text-indigo-200">Déconnexion</a></li>
+                    {% else %}
+                        <li><a href="{% url 'login' %}" class="hover:text-indigo-200">Connexion</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="flex-grow container mx-auto p-6">
+        <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">Bienvenue, {{ user.get_full_name|default:user.username }} !</h2>
+
+        <!-- Section des statistiques clés -->
+        <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12">
+            <div class="dashboard-card">
+                <h3 class="dashboard-card-title">Total Étudiants</h3>
+                <p class="dashboard-card-value">{{ total_etudiants }}</p>
+                <a href="{% url 'custom_etudiant_list' %}" class="dashboard-link">Gérer les Étudiants</a>
+            </div>
+
+            <div class="dashboard-card">
+                <h3 class="dashboard-card-title">Total Formateurs</h3>
+                <p class="dashboard-card-value">{{ total_formateurs }}</p>
+                <a href="{% url 'custom_formateur_list' %}" class="dashboard-link">Gérer les Formateurs</a> {# Lien mis à jour #}
+            </div>
+
+            <div class="dashboard-card">
+                <h3 class="dashboard-card-title">Inscriptions en Attente</h3>
+                <p class="dashboard-card-value">{{ inscriptions_en_attente }}</p>
+                <a href="{% url 'custom_inscription_list' %}?statut__exact=PRE_INSCRIPTION" class="dashboard-link">Voir les Demandes</a>
+            </div>
+
+            <div class="dashboard-card">
+                <h3 class="dashboard-card-title">Articles Publiés</h3>
+                <p class="dashboard-card-value">{{ articles_publies }}</p>
+                <a href="{% url 'admin:core_article_changelist' %}?est_publie__exact=1" class="dashboard-link">Gérer les Articles</a> {# Conserve le lien admin par défaut pour l'instant #}
+            </div>
+
+            <div class="dashboard-card">
+                <h3 class="dashboard-card-title">Émargements en Attente</h3>
+                <p class="dashboard-card-value">{{ emargements_en_attente }}</p>
+                <a href="{% url 'emargement_validation' %}" class="dashboard-link">Valider les Émargements</a>
+            </div>
+        </section>
+
+        <!-- Section des raccourcis et rapports -->
+        <section class="bg-white p-8 rounded-lg shadow-md">
+            <h3 class="text-2xl font-semibold text-gray-800 mb-6 border-b pb-3">Accès Rapide & Rapports</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <a href="{% url 'custom_inscription_list' %}" class="block p-4 bg-blue-100 text-blue-800 rounded-md hover:bg-blue-200 transition-colors duration-300 font-medium text-lg text-center">
+                    Gérer toutes les Inscriptions
+                </a>
+                <a href="{% url 'custom_note_list' %}" class="block p-4 bg-green-100 text-green-800 rounded-md hover:bg-green-200 transition-colors duration-300 font-medium text-lg text-center"> {# Lien mis à jour #}
+                    Gérer les Notes
+                </a>
+                <a href="{% url 'admin:core_emargement_changelist' %}" class="block p-4 bg-purple-100 text-purple-800 rounded-md hover:bg-purple-200 transition-colors duration-300 font-medium text-lg text-center">
+                    Historique des Émargements
+                </a>
+                <a href="{% url 'rapport_heures_formateurs' %}" class="block p-4 bg-yellow-100 text-yellow-800 rounded-md hover:bg-yellow-200 transition-colors duration-300 font-medium text-lg text-center">
+                    Rapport Heures Formateurs
+                </a>
+                <a href="{% url 'admin:core_like_changelist' %}" class="block p-4 bg-pink-100 text-pink-800 rounded-md hover:bg-pink-200 transition-colors duration-300 font-medium text-lg text-center">
+                    Gérer les Likes
+                </a>
+                <a href="{% url 'admin:core_comment_changelist' %}" class="block p-4 bg-red-100 text-red-800 rounded-md hover:bg-red-200 transition-colors duration-300 font-medium text-lg text-center">
+                    Gérer les Commentaires
+                </a>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-gray-800 text-white p-4 mt-8 text-center">
+        <div class="container mx-auto">
+            <p>&copy; {% now "Y" %} ALEXA SCHOOL. Tous droits réservés.</p>
+        </div>
+    </footer>
+</body>
+</html>

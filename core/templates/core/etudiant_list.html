@@ -1,0 +1,74 @@
+{% extends 'core/base_admin.html' %}
+
+{% block title %}Gestion des Étudiants{% endblock %}
+
+{% block content %}
+<div class="bg-white p-6 rounded-lg shadow-md">
+    <div class="flex justify-between items-center mb-6">
+        <h2 class="text-2xl font-semibold text-gray-800">Liste des Étudiants</h2>
+        <a href="{% url 'custom_etudiant_create' %}" class="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 transition-colors duration-300">
+            Ajouter un Étudiant
+        </a>
+    </div>
+
+    <div class="overflow-x-auto">
+        <table class="min-w-full bg-white border border-gray-200 rounded-lg">
+            <thead>
+                <tr class="bg-gray-100 text-gray-600 uppercase text-sm leading-normal">
+                    <th class="py-3 px-6 text-left">Nom</th>
+                    <th class="py-3 px-6 text-left">Prénom</th>
+                    <th class="py-3 px-6 text-left">Matricule</th>
+                    <th class="py-3 px-6 text-left">Option</th>
+                    <th class="py-3 px-6 text-left">Niveau</th>
+                    <th class="py-3 px-6 text-center">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="text-gray-700 text-sm font-light">
+                {% for etudiant in page_obj %}
+                <tr class="border-b border-gray-200 hover:bg-gray-50">
+                    <td class="py-3 px-6 text-left whitespace-nowrap">{{ etudiant.nom }}</td>
+                    <td class="py-3 px-6 text-left">{{ etudiant.prenom }}</td>
+                    <td class="py-3 px-6 text-left">{{ etudiant.matricule }}</td>
+                    <td class="py-3 px-6 text-left">{{ etudiant.option.nom|default:"N/A" }}</td>
+                    <td class="py-3 px-6 text-left">{{ etudiant.niveau.nom|default:"N/A" }}</td>
+                    <td class="py-3 px-6 text-center">
+                        <div class="flex item-center justify-center space-x-2">
+                            <a href="{% url 'custom_etudiant_update' pk=etudiant.pk %}" class="bg-blue-500 text-white px-3 py-1 rounded-md hover:bg-blue-600 text-xs">Modifier</a>
+                            <form action="{% url 'custom_etudiant_delete' pk=etudiant.pk %}" method="post" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer cet étudiant ?');">
+                                {% csrf_token %}
+                                <button type="submit" class="bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600 text-xs">Supprimer</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="py-4 px-6 text-center text-gray-500">Aucun étudiant trouvé.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="flex justify-center mt-6">
+        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+            {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                    Précédent
+                </a>
+            {% endif %}
+
+            <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                Page {{ page_obj.number }} sur {{ page_obj.paginator.num_pages }}
+            </span>
+
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                    Suivant
+                </a>
+            {% endif %}
+        </nav>
+    </div>
+</div>
+{% endblock %}

@@ -141,22 +141,22 @@
         <div class="w-full max-w-2xl mt-8 mb-8">
             <h1 class="text-4xl font-extrabold text-gray-900 text-center mb-8">Dernières Actualités et Articles</h1>
             <div class="flex justify-between items-center mb-6">
-            <div>
-                {# Correction ici: Utilisation de hasattr pour vérifier la liaison ou user.etudiant directement #}
-                {# La condition a été simplifiée pour s'assurer qu'elle est correctement parsée par le moteur de template. #}
-                {% if user.is_authenticated %}
-                    {% if user.is_staff or user.etudiant %}
-                        <a href="{% url 'article_create' %}" class="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition duration-300">
-                            + Publier un Article
-                        </a>
-                    {% endif %}
-                 {% endif %}
+                <div>
+                    {# Correction ici: Utilisation de hasattr pour vérifier la liaison ou user.etudiant directement #}
+                    {# La condition a été simplifiée pour s'assurer qu'elle est correctement parsée par le moteur de template. #}
+                    {% if user.is_authenticated %}
+                        {% if user.is_staff or user.etudiant %}
+                            <a href="{% url 'article_create' %}" class="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition duration-300">
+                                + Publier un Article
+                            </a>
+                        {% endif %}
+                     {% endif %}
 
-                <a href="{% url 'home' %}" class="ml-2 bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600 transition duration-300">
-                    Accueil
-                </a>
+                    <a href="{% url 'home' %}" class="ml-2 bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600 transition duration-300">
+                        Accueil
+                    </a>
+                </div>
             </div>
-        </div>
 
             {% if articles %}
                 {% for article in articles %}

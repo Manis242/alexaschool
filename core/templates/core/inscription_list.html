@@ -1,0 +1,74 @@
+{% extends 'core/base_admin.html' %}
+
+{% block title %}Gestion des Inscriptions{% endblock %}
+
+{% block content %}
+<div class="bg-white p-6 rounded-lg shadow-md">
+    <h2 class="text-2xl font-semibold text-gray-800 mb-6 text-center">Liste des Inscriptions</h2>
+
+    <div class="overflow-x-auto">
+        <table class="min-w-full bg-white border border-gray-200 rounded-lg">
+            <thead>
+                <tr class="bg-gray-100 text-gray-600 uppercase text-sm leading-normal">
+                    <th class="py-3 px-6 text-left">Étudiant</th>
+                    <th class="py-3 px-6 text-left">Date Demande</th>
+                    <th class="py-3 px-6 text-left">Statut</th>
+                    <th class="py-3 px-6 text-left">Montant Payé</th>
+                    <th class="py-3 px-6 text-center">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="text-gray-700 text-sm font-light">
+                {% for inscription in page_obj %}
+                <tr class="border-b border-gray-200 hover:bg-gray-50">
+                    <td class="py-3 px-6 text-left whitespace-nowrap">{{ inscription.etudiant.nom }} {{ inscription.etudiant.prenom }}</td>
+                    <td class="py-3 px-6 text-left">{{ inscription.date_demande|date:"d/m/Y H:i" }}</td>
+                    <td class="py-3 px-6 text-left">
+                        <span class="px-2 py-1 rounded-full text-xs font-semibold
+                            {% if inscription.statut == 'PRE_INSCRIPTION' %}bg-yellow-100 text-yellow-800
+                            {% elif inscription.statut == 'EN_ATTENTE_PAIEMENT' %}bg-orange-100 text-orange-800
+                            {% elif inscription.statut == 'INSCRIT' %}bg-green-100 text-green-800
+                            {% elif inscription.statut == 'ANNULE' %}bg-red-100 text-red-800
+                            {% endif %}">
+                            {{ inscription.get_statut_display }}
+                        </span>
+                    </td>
+                    <td class="py-3 px-6 text-left">{{ inscription.montant_paye }}</td>
+                    <td class="py-3 px-6 text-center">
+                        <form action="{% url 'custom_inscription_update_status' pk=inscription.pk %}" method="post" class="flex items-center justify-center space-x-2">
+                            {% csrf_token %}
+                            {{ InscriptionStatusForm.statut }}
+                            <button type="submit" class="bg-indigo-500 text-white px-3 py-1 rounded-md hover:bg-indigo-600 text-xs">Mettre à jour</button>
+                        </form>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="py-4 px-6 text-center text-gray-500">Aucune inscription trouvée.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <div class="flex justify-center mt-6">
+        <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+            {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                    Précédent
+                </a>
+            {% endif %}
+
+            <span class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">
+                Page {{ page_obj.number }} sur {{ page_obj.paginator.num_pages }}
+            </span>
+
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                    Suivant
+                </a>
+            {% endif %}
+        </nav>
+    </div>
+</div>
+{% endblock %}
